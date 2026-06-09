@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ru" x-data="favApp()" x-init="init()">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Избранное - FanCanvas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; }
+        .pattern-bg { background-image: radial-gradient(#e0e0e0 1px, transparent 1px); background-size: 20px 20px; }
+        .card-shadow { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    </style>
+</head>
+<body class="pattern-bg min-h-screen">
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <a href="index.html" class="text-2xl font-bold text-teal-600">FanCanvas</a>
+            <div class="flex items-center gap-4">
+                <a href="cart.html" class="text-gray-600 hover:text-teal-600"><i class="fas fa-shopping-cart text-xl"></i></a>
+                <a href="profile.html" class="text-gray-600 hover:text-teal-600"><i class="fas fa-user text-xl"></i></a>
+            </div>
+        </div>
+    </header>
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <h1 class="text-2xl font-bold mb-6">Избранное</h1>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <template x-for="fav in favorites" :key="fav.id">
+                <div class="bg-white rounded-xl overflow-hidden card-shadow">
+                    <div class="aspect-square bg-gray-100 relative">
+                        <img :src="fav.product.images[0]?.image_url || 'https://via.placeholder.com/400'" class="w-full h-full object-cover">
+                        <button @click="remove(fav.product.id)" class="absolute top-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow text-red-500 hover:bg-red-50 transition">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="p-4">
+                        <div class="text-red-500 font-bold" x-text="fav.product.price + '₽'"></div>
+                        <a :href="'product.html?id=' + fav.product.id" class="text-sm font-medium hover:text-teal-600 block mt-1 truncate" x-text="fav.product.title"></a>
+                    </div>
+                </div>
+            </template>
+        </div>
+        <div x-show="favorites.length === 0" class="text-center py-20 text-gray-500">
+            <i class="fas fa-heart text-4xl mb-4 text-gray-300"></i>
+            <p>У вас пока нет избранных товаров</p>
+            <a href="index.html" class="text-teal-600 hover:underline mt-2 inline-block">Перейти в каталог</a>
+        </div>
+    </main>
+    <script>
+        function favApp() {
+            return {
+                favorites: [],
+                async init() {
+                    const token = localStorage.getItem('token');
+                    if (!token) return window.location.href = 'login.html';
+                    await this.load();
+                },
+                async load() {
+                    const token = localStorage.getItem('token');
+                    const res = await fetch('/api/favorites', { headers: { 'Authorization': 'Bearer ' + token } });
+                    this.favorites = await res.json();
+                },
+                async remove(productId) {
+                    const token = localStorage.getItem('token');
+                    await fetch('/api/favorites/' + productId, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } });
+                    await this.load();
+                }
+            }
+        }
+    </script>
+</body>
+</html>

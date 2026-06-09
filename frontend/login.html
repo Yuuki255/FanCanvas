@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход - FanCanvas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #e8e8e8; }
+        .pattern-bg { background-image: radial-gradient(#d0d0d0 1px, transparent 1px); background-size: 20px 20px; }
+        .login-card { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); }
+        .input-teal { border: 2px solid #00BFA5; border-radius: 9999px; transition: all 0.3s; }
+        .input-teal:focus { outline: none; box-shadow: 0 0 0 4px rgba(0,191,165,0.15); border-color: #008E76; }
+        .btn-primary { background: linear-gradient(135deg, #00BFA5 0%, #008E76 100%); border-radius: 9999px; }
+    </style>
+</head>
+<body class="pattern-bg min-h-screen flex items-center justify-center p-4">
+    <div class="login-card w-full max-w-md rounded-2xl shadow-2xl p-8">
+        <h1 class="text-3xl font-bold text-center text-teal-600 mb-8">Вход</h1>
+        <form id="loginForm" class="space-y-5">
+            <div>
+                <label class="block text-sm text-gray-600 mb-1 ml-3">Email:</label>
+                <input type="email" id="email" required placeholder="введите логин" class="input-teal w-full px-5 py-3 text-sm">
+            </div>
+            <div>
+                <label class="block text-sm text-gray-600 mb-1 ml-3">Пароль:</label>
+                <input type="password" id="password" required placeholder="введите пароль" class="input-teal w-full px-5 py-3 text-sm">
+                <div class="text-right mt-1 mr-3">
+                    <a href="#" class="text-xs text-gray-400 hover:text-teal-600">забыли пароль?</a>
+                </div>
+            </div>
+            <div class="flex items-center ml-3">
+                <input type="checkbox" id="remember" class="rounded text-teal-600 focus:ring-teal-500">
+                <label for="remember" class="ml-2 text-sm text-gray-600">Запомнить меня</label>
+            </div>
+            <button type="submit" class="btn-primary w-full py-3 text-white font-medium text-lg shadow-lg hover:shadow-xl transition transform hover:scale-[1.02]">
+                Войти
+            </button>
+            <div class="text-center">
+                <a href="register.html" class="text-gray-600 hover:text-teal-600 font-medium border-b border-gray-300 hover:border-teal-600 transition">Регистрация</a>
+            </div>
+        </form>
+    </div>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: document.getElementById('email').value,
+                    password: document.getElementById('password').value
+                })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                localStorage.setItem('token', data.access_token);
+                localStorage.setItem('role', data.role);
+                window.location.href = data.role === 'artist' ? 'artist-dashboard.html' : 'index.html';
+            } else {
+                alert('Неверный email или пароль');
+            }
+        });
+    </script>
+</body>
+</html>

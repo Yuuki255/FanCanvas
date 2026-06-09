@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ru" x-data="shopApp()" x-init="init()">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Магазин художника - FanCanvas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; }
+        .pattern-bg { background-image: radial-gradient(#e0e0e0 1px, transparent 1px); background-size: 20px 20px; }
+        .card-shadow { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    </style>
+</head>
+<body class="pattern-bg min-h-screen">
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <a href="index.html" class="text-2xl font-bold text-teal-600">FanCanvas</a>
+        </div>
+    </header>
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <div class="bg-white rounded-xl p-8 card-shadow mb-8" x-show="profile">
+            <div class="flex items-center gap-6">
+                <img :src="profile?.user?.avatar_url || 'https://via.placeholder.com/100'" class="w-24 h-24 rounded-full object-cover">
+                <div>
+                    <h1 class="text-2xl font-bold" x-text="profile?.profile?.shop_name"></h1>
+                    <p class="text-gray-600 mt-2" x-text="profile?.profile?.bio || 'Нет описания'"></p>
+                    <div class="flex items-center gap-4 mt-3 text-sm text-gray-500">
+                        <span><i class="fas fa-star text-yellow-400"></i> <span x-text="profile?.profile?.rating"></span></span>
+                        <span><i class="fas fa-shopping-bag text-teal-500"></i> <span x-text="products.length + ' товаров'"></span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <h2 class="text-xl font-bold mb-4">Товары художника</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <template x-for="p in products" :key="p.id">
+                <a :href="'product.html?id=' + p.id" class="bg-white rounded-xl overflow-hidden card-shadow hover:shadow-xl transition group">
+                    <div class="aspect-square bg-gray-100"><img :src="p.images[0]?.image_url" class="w-full h-full object-cover group-hover:scale-105 transition"></div>
+                    <div class="p-4"><div class="text-red-500 font-bold" x-text="p.price + '₽'"></div><div class="text-sm font-medium truncate" x-text="p.title"></div></div>
+                </a>
+            </template>
+        </div>
+    </main>
+    <script>
+        function shopApp() {
+            return {
+                profile: null, products: [],
+                async init() {
+                    const params = new URLSearchParams(window.location.search);
+                    const id = params.get('id');
+                    if (!id) return window.location.href = 'index.html';
+                    const res = await fetch('/api/artists/' + id + '/profile');
+                    this.profile = await res.json();
+                    const pRes = await fetch('/api/artists/' + id + '/products');
+                    this.products = await pRes.json();
+                }
+            }
+        }
+    </script>
+</body>
+</html>

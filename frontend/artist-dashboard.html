@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ru" x-data="artistApp()" x-init="init()">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кабинет художника - FanCanvas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; }
+        .pattern-bg { background-image: radial-gradient(#e0e0e0 1px, transparent 1px); background-size: 20px 20px; }
+        .card-shadow { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .menu-item { padding: 0.75rem 1rem; border-radius: 0.5rem; cursor: pointer; transition: all 0.2s; }
+        .menu-item:hover, .menu-item.active { background: #e0f2f1; color: #008E76; }
+        .stat-card { background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    </style>
+</head>
+<body class="pattern-bg min-h-screen">
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <a href="index.html" class="text-2xl font-bold text-teal-600">FanCanvas</a>
+            <div class="flex items-center gap-4">
+                <button @click="toggleMode()" class="text-xs bg-teal-100 text-teal-700 px-3 py-1.5 rounded-full">Режим покупателя</button>
+                <button @click="logout()" class="text-gray-600 hover:text-red-500"><i class="fas fa-sign-out-alt"></i></button>
+            </div>
+        </div>
+    </header>
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-xl p-6 card-shadow mb-4">
+                    <div class="flex items-center gap-3 mb-4">
+                        <img :src="profile?.user?.avatar_url || 'https://via.placeholder.com/50'" class="w-12 h-12 rounded-full">
+                        <div>
+                            <div class="font-bold" x-text="profile?.shop_name"></div>
+                            <div class="text-xs text-gray-500">Рейтинг: <span x-text="profile?.rating"></span></div>
+                        </div>
+                    </div>
+                    <div class="text-2xl font-bold text-teal-600" x-text="(profile?.available_balance || 0) + '₽'"></div>
+                    <div class="text-xs text-gray-500">Доступно к выводу</div>
+                </div>
+                <div class="bg-white rounded-xl p-4 card-shadow space-y-1">
+                    <div @click="tab = 'products'" :class="{'active': tab === 'products'}" class="menu-item"><i class="fas fa-box w-5"></i> Мои товары</div>
+                    <div @click="tab = 'add'" :class="{'active': tab === 'add'}" class="menu-item"><i class="fas fa-plus w-5"></i> Добавить товар</div>
+                    <div @click="tab = 'orders'" :class="{'active': tab === 'orders'}" class="menu-item"><i class="fas fa-truck w-5"></i> Заказы</div>
+                    <div @click="tab = 'stats'" :class="{'active': tab === 'stats'}" class="menu-item"><i class="fas fa-chart-bar w-5"></i> Статистика</div>
+                    <div @click="tab = 'finance'" :class="{'active': tab === 'finance'}" class="menu-item"><i class="fas fa-wallet w-5"></i> Финансы</div>
+                    <div @click="window.location.href='profile.html'" class="menu-item text-teal-600 border-t mt-2 pt-2"><i class="fas fa-user w-5"></i> Профиль</div>
+                </div>
+            </div>
+            <div class="lg:col-span-3">
+                <div x-show="tab === 'products'" class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-xl font-bold">Мои товары</h2>
+                        <button @click="tab = 'add'" class="bg-teal-500 text-white px-4 py-2 rounded-full text-sm hover:bg-teal-600"><i class="fas fa-plus mr-1"></i> Добавить</button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <template x-for="p in products" :key="p.id">
+                            <div class="bg-white rounded-xl p-4 card-shadow flex gap-4">
+                                <img :src="p.images[0]?.image_url" class="w-24 h-24 rounded-lg object-cover bg-gray-100">
+                                <div class="flex-1">
+                                    <div class="flex justify-between items-start">
+                                        <h3 class="font-medium" x-text="p.title"></h3>
+                                        <div class="flex gap-2">
+                                            <button @click="editProduct(p)" class="text-gray-400 hover:text-teal-600"><i class="fas fa-edit"></i></button>
+                                            <button @click="deleteProduct(p.id)" class="text-gray-400 hover:text-red-500"><i class="fas fa-trash"></i></button>
+                                        </div>
+                                    </div>
+                                    <div class="text-red-500 font-bold mt-1" x-text="p.price + '₽'"></div>
+                                    <div class="text-xs text-gray-500 mt-1" x-text="'В наличии: ' + p.stock + ' шт. • Просмотров: ' + p.views"></div>
+                                    <div class="mt-2"><span class="text-xs px-2 py-1 rounded-full bg-gray-100" x-text="p.status"></span></div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                <div x-show="tab === 'add'" class="bg-white rounded-xl p-6 card-shadow">
+                    <h2 class="text-xl font-bold mb-4" x-text="editingId ? 'Редактировать товар' : 'Новый товар'"></h2>
+                    <form @submit.prevent="saveProduct()" class="space-y-4">
+                        <div><label class="block text-sm text-gray-600 mb-1">Название</label><input x-model="productForm.title" type="text" required class="w-full border-2 border-teal-500 rounded-lg px-4 py-2"></div>
+                        <div><label class="block text-sm text-gray-600 mb-1">Описание</label><textarea x-model="productForm.description" rows="3" class="w-full border-2 border-teal-500 rounded-lg px-4 py-2"></textarea></div>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div><label class="block text-sm text-gray-600 mb-1">Цена (₽)</label><input x-model="productForm.price" type="number" required class="w-full border-2 border-teal-500 rounded-lg px-4 py-2"></div>
+                            <div><label class="block text-sm text-gray-600 mb-1">Остаток</label><input x-model="productForm.stock" type="number" required class="w-full border-2 border-teal-500 rounded-lg px-4 py-2"></div>
+                            <div><label class="block text-sm text-gray-600 mb-1">Срок отправки (дней)</label><input x-model="productForm.shipping_days" type="number" class="w-full border-2 border-teal-500 rounded-lg px-4 py-2"></div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm text-gray-600 mb-1">Категория</label>
+                                <select x-model="productForm.category_id" required class="w-full border-2 border-teal-500 rounded-lg px-4 py-2 bg-white">
+                                    <option value="">Выберите</option>
+                                    <template x-for="c in categories" :key="c.id"><option :value="c.id" x-text="c.name"></option></template>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-600 mb-1">Фандом</label>
+                                <select x-model="productForm.fandom_id" class="w-full border-2 border-teal-500 rounded-lg px-4 py-2 bg-white">
+                                    <option value="">Оригинал</option>
+                                    <template x-for="f in fandoms" :key="f.id"><option :value="f.id" x-text="f.name"></option></template>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-600 mb-1">Атрибуты</label>
+                            <div class="space-y-2">
+                                <template x-for="(attr, idx) in productForm.attributes" :key="idx">
+                                    <div class="flex gap-2">
+                                        <input x-model="attr.attr_name" placeholder="Название" class="flex-1 border rounded-lg px-3 py-1 text-sm">
+                                        <input x-model="attr.attr_value" placeholder="Значение" class="flex-1 border rounded-lg px-3 py-1 text-sm">
+                                        <button @click="productForm.attributes.splice(idx, 1)" type="button" class="text-red-500"><i class="fas fa-times"></i></button>
+                                    </div>
+                                </template>
+                                <button @click="productForm.attributes.push({attr_name:'', attr_value:''})" type="button" class="text-sm text-teal-600 hover:underline">+ Добавить атрибут</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-600 mb-1">Фото (до 10 шт)</label>
+                            <input type="file" multiple accept="image/*" @change="handleFiles($event)" class="w-full text-sm">
+                            <div class="flex gap-2 mt-2 flex-wrap">
+                                <template x-for="preview in previews" :key="preview"><img :src="preview" class="w-16 h-16 rounded-lg object-cover"></template>
+                            </div>
+                        </div>
+                        <div class="flex gap-3">
+                            <button type="submit" class="bg-teal-500 text-white px-6 py-2 rounded-full hover:bg-teal-600" x-text="editingId ? 'Сохранить' : 'Создать товар'"></button>
+                            <button @click="tab = 'products'" type="button" class="border border-gray-300 px-6 py-2 rounded-full hover:bg-gray-50">Отмена</button>
+                        </div>
+                    </form>
+                </div>
+                <div x-show="tab === 'orders'" class="space-y-4">
+                    <h2 class="text-xl font-bold">Заказы покупателей</h2>
+                    <div class="space-y-3">
+                        <template x-for="item in orders" :key="item.id">
+                            <div class="bg-white rounded-xl p-4 card-shadow">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div>
+                                        <span class="font-bold">Заказ #<span x-text="item.order_id"></span></span>
+                                        <span class="text-xs text-gray-500 ml-2">
+                                            Товар #<span x-text="item.product_id"></span>
+                                        </span>
+                                    </div>
+                                    <span class="text-xs px-2 py-1 rounded-full" :class="item.shipping_status === 'shipped' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'" x-text="item.shipping_status"></span>
+                                </div>
+                                <div class="text-sm text-gray-600 mb-3">Количество: <span x-text="item.quantity"></span> • Сумма: <span x-text="(item.unit_price * item.quantity) + '₽'"></span></div>
+                                <div x-show="item.shipping_status === 'pending'" class="flex gap-2">
+                                    <input x-model="item.track_number" placeholder="Трек-номер" class="flex-1 border rounded-lg px-3 py-1 text-sm">
+                                    <button @click="shipItem(item)" class="bg-teal-500 text-white px-3 py-1 rounded-lg text-sm">Отправлено</button>
+                                </div>
+                                <div x-show="item.shipping_status === 'shipped'" class="text-sm text-green-600">
+                                    <i class="fas fa-check-circle"></i> Отправлено, трек: <span x-text="item.track_number"></span>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                <div x-show="tab === 'stats'" class="space-y-4">
+                    <h2 class="text-xl font-bold">Статистика</h2>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="stat-card"><div class="text-2xl font-bold text-teal-600" x-text="stats?.total_products"></div><div class="text-xs text-gray-500">Товаров</div></div>
+                        <div class="stat-card"><div class="text-2xl font-bold text-teal-600" x-text="stats?.total_sales"></div><div class="text-xs text-gray-500">Продаж</div></div>
+                        <div class="stat-card"><div class="text-2xl font-bold text-teal-600" x-text="(stats?.total_revenue || 0) + '₽'"></div><div class="text-xs text-gray-500">Выручка</div></div>
+                        <div class="stat-card"><div class="text-2xl font-bold text-teal-600" x-text="stats?.products_views"></div><div class="text-xs text-gray-500">Просмотров</div></div>
+                    </div>
+                </div>
+                <div x-show="tab === 'finance'" class="bg-white rounded-xl p-6 card-shadow">
+                    <h2 class="text-xl font-bold mb-4">Финансы</h2>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center p-4 bg-teal-50 rounded-xl">
+                            <div>
+                                <div class="text-sm text-gray-600">Доступно к выводу</div>
+                                <div class="text-2xl font-bold text-teal-700" x-text="(profile?.profile?.available_balance || 0) + '₽'"></div>
+                            </div>
+                            <button class="bg-teal-500 text-white px-4 py-2 rounded-full text-sm">Заявка на вывод</button>
+                        </div>
+                        <div class="text-sm text-gray-500">Минимальная сумма вывода: <span x-text="(profile?.min_payout || 1000) + '₽'"></span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script>
+        function artistApp() {
+            return {
+                tab: 'products', user: null, profile: null, products: [], orders: [], categories: [], fandoms: [], stats: {},
+                editingId: null, previews: [], files: [],
+                productForm: { title: '', description: '', price: '', stock: '', shipping_days: 3, category_id: '', fandom_id: '', attributes: [] },
+                async init() {
+                    const token = localStorage.getItem('token');
+                    if (!token) return window.location.href = 'login.html';
+                    const res = await fetch('/api/auth/me', { headers: { 'Authorization': 'Bearer ' + token } });
+                    this.user = await res.json();
+                    if (this.user.role !== 'artist') return window.location.href = 'index.html';
+                    await this.loadProfile(); await this.loadCategories(); await this.loadFandoms();
+                    await this.loadProducts(); await this.loadOrders(); await this.loadStats();
+                },
+                async loadProfile() {
+                    const token = localStorage.getItem('token');
+
+                    const res = await fetch('/api/artists/profile', {
+                     headers: {
+                    Authorization: 'Bearer ' + token
+                    }
+                    });
+
+                    this.profile = await res.json();
+                },
+                async loadCategories() { const res = await fetch('/api/categories'); this.categories = await res.json(); },
+                async loadFandoms() { const res = await fetch('/api/fandoms'); this.fandoms = await res.json(); },
+                async loadProducts() {
+                    const token = localStorage.getItem('token');
+
+                    const res = await fetch('/api/artists/products', {
+                    headers: {
+                     Authorization: 'Bearer ' + token
+                    }
+                    });
+
+                     this.products = await res.json();
+                },
+                async loadOrders() {
+                    const token = localStorage.getItem('token');
+
+                    const res = await fetch('/api/artists/orders', {
+                    headers: {
+                    Authorization: 'Bearer ' + token
+                    }
+                    });
+
+                    this.orders = await res.json();
+                },
+                async loadStats() {
+                    const token = localStorage.getItem('token');
+
+                    const res = await fetch('/api/artists/dashboard', {
+                        headers: {
+                             Authorization: 'Bearer ' + token
+                        }
+                    });
+
+                     const data = await res.json();
+
+                     this.stats = {
+                        total_products: data.products_count || 0,
+                        total_sales: data.orders_count || 0,
+                        total_revenue: data.total_sales || 0,
+                        products_views: 0
+                    };
+                },
+                handleFiles(e) { this.files = Array.from(e.target.files); this.previews = this.files.map(f => URL.createObjectURL(f)); },
+                async saveProduct() {
+                    const token = localStorage.getItem('token');
+                    const form = new FormData();
+                    Object.keys(this.productForm).forEach(k => {
+                        if (k === 'attributes') { this.productForm[k].forEach(a => { if(a.attr_name) { form.append('attr_keys', a.attr_name); form.append('attr_values', a.attr_value); } }); }
+                        else { form.append(k, this.productForm[k]); }
+                    });
+                    this.files.forEach(f => form.append('files', f));
+                    const url = this.editingId ? '/api/products/' + this.editingId : '/api/products';
+                    const method = this.editingId ? 'PUT' : 'POST';
+                    const res = await fetch(url, { method: method, headers: { 'Authorization': 'Bearer ' + token }, body: form });
+                    if (res.ok) {
+                        alert(this.editingId ? 'Товар обновлен' : 'Товар создан');
+                        this.tab = 'products'; this.editingId = null;
+                        this.productForm = { title: '', description: '', price: '', stock: '', shipping_days: 3, category_id: '', fandom_id: '', attributes: [] };
+                        this.previews = []; this.files = [];
+                        await this.loadProducts();
+                    } else { alert('Ошибка сохранения'); }
+                },
+                editProduct(p) {
+                    this.productForm = { title: p.title, description: p.description || '', price: p.price, stock: p.stock, shipping_days: p.shipping_days, category_id: p.category_id, fandom_id: p.fandom_id || '', attributes: p.attributes || [] };
+                    this.editingId = p.id; this.tab = 'add';
+                },
+                async deleteProduct(id) {
+                    if (!confirm('Удалить товар?')) return;
+                    const token = localStorage.getItem('token');
+                    await fetch('/api/products/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
+                    await this.loadProducts();
+                },
+                async shipItem(item) {
+                    if (!item.track_number) return alert('Введите трек-номер');
+                    const token = localStorage.getItem('token');
+                    const form = new FormData();
+                    form.append('track_number', item.track_number);
+                    await fetch('/api/artist/orders/' + item.id + '/ship', { method: 'PUT', headers: { 'Authorization': 'Bearer ' + token }, body: form });
+                    await this.loadOrders(); await this.loadProfile();
+                },
+                toggleMode() { window.location.href = 'index.html'; },
+                logout() { localStorage.clear(); window.location.href = 'index.html'; }
+            }
+        }
+    </script>
+</body>
+</html>

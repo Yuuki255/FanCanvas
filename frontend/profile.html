@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ru" x-data="profileApp()" x-init="init()">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Профиль - FanCanvas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; }
+        .pattern-bg { background-image: radial-gradient(#e0e0e0 1px, transparent 1px); background-size: 20px 20px; }
+        .card-shadow { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .menu-item { padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer; transition: all 0.2s; }
+        .menu-item:hover, .menu-item.active { background: #e0f2f1; color: #008E76; }
+    </style>
+</head>
+<body class="pattern-bg min-h-screen">
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <a href="index.html" class="text-2xl font-bold text-teal-600">FanCanvas</a>
+            <div class="flex items-center gap-4">
+                <a href="cart.html" class="text-gray-600 hover:text-teal-600"><i class="fas fa-shopping-cart text-xl"></i></a>
+                <button @click="logout()" class="text-gray-600 hover:text-red-500 text-sm">Выйти</button>
+            </div>
+        </div>
+    </header>
+    <main class="max-w-6xl mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div class="md:col-span-1">
+                <div class="bg-white rounded-xl p-6 card-shadow text-center mb-4">
+                    <div class="w-24 h-24 rounded-full bg-gray-200 mx-auto mb-3 overflow-hidden">
+                        <img :src="user?.avatar_url || 'https://via.placeholder.com/100'" class="w-full h-full object-cover">
+                    </div>
+                    <h2 class="font-bold" x-text="user?.name"></h2>
+                    <p class="text-xs text-gray-500" x-text="user?.role === 'artist' ? 'Художник' : 'Покупатель'"></p>
+                </div>
+                <div class="bg-white rounded-xl p-4 card-shadow space-y-1">
+                    <div @click="tab = 'info'" :class="{'active': tab === 'info'}" class="menu-item text-sm"><i class="fas fa-user w-5"></i> Учетные данные</div>
+                    <div @click="tab = 'orders'" :class="{'active': tab === 'orders'}" class="menu-item text-sm"><i class="fas fa-box w-5"></i> Заказы</div>
+                    <template x-if="user?.role === 'artist'">
+                        <div @click="window.location.href='artist-dashboard.html'" class="menu-item text-sm text-teal-600 font-medium mt-2 border-t pt-2">
+                            <i class="fas fa-paint-brush w-5"></i> Перейти в кабинет художника
+                        </div>
+                    </template>
+                    <div @click="logout()" class="menu-item text-sm text-red-500 mt-2 border-t pt-2"><i class="fas fa-sign-out-alt w-5"></i> Выйти</div>
+                </div>
+            </div>
+            <div class="md:col-span-3">
+                <div class="bg-white rounded-xl p-6 card-shadow">
+                    <div x-show="tab === 'info'">
+                        <h3 class="font-bold text-lg mb-4">Учетные данные</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><label class="text-xs text-gray-500">Имя</label><input x-model="editForm.name" type="text" class="w-full border rounded-lg px-3 py-2 mt-1"></div>
+                            <div><label class="text-xs text-gray-500">Телефон</label><input x-model="editForm.phone" type="text" class="w-full border rounded-lg px-3 py-2 mt-1"></div>
+                            <div><label class="text-xs text-gray-500">Email</label><input x-model="editForm.email" type="email" disabled class="w-full border rounded-lg px-3 py-2 mt-1 bg-gray-50"></div>
+                        </div>
+                        <h3 class="font-bold text-lg mt-6 mb-4">Данные для доставки</h3>
+                        <div><label class="text-xs text-gray-500">Адрес</label><textarea x-model="editForm.address" rows="2" class="w-full border rounded-lg px-3 py-2 mt-1"></textarea></div>
+                        <button @click="saveProfile()" class="mt-4 bg-teal-500 text-white px-6 py-2 rounded-full hover:bg-teal-600 transition">Сохранить</button>
+                    </div>
+                    <div x-show="tab === 'orders'">
+                        <h3 class="font-bold text-lg mb-4">Мои заказы</h3>
+                        <div class="space-y-4">
+                            <template x-for="order in orders" :key="order.id">
+                                <div class="border rounded-lg p-4">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <div>
+                                            <span class="font-bold">Заказ #<<span x-text="order.id"></span></span>
+                                            <span class="text-xs text-gray-500 ml-2" x-text="new Date(order.created_at).toLocaleDateString()"></span>
+                                        </div>
+                                        <span class="text-xs px-2 py-1 rounded-full bg-teal-100 text-teal-700" x-text="order.status"></span>
+                                    </div>
+                                    <div class="text-sm text-gray-600">
+                                        <div x-text="order.delivery_address"></div>
+                                        <div class="mt-1 font-bold" x-text="order.total_amount + '₽'"></div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script>
+        function profileApp() {
+            return {
+                user: null, tab: 'info', orders: [], editForm: {},
+                async init() {
+                    const token = localStorage.getItem('token');
+                    if (!token) return window.location.href = 'login.html';
+                    const res = await fetch('/api/auth/me', { headers: { 'Authorization': 'Bearer ' + token } });
+                    this.user = await res.json();
+                    this.editForm = { ...this.user, address: '' };
+                    await this.loadOrders();
+                },
+                async loadOrders() {
+                    const token = localStorage.getItem('token');
+                    const res = await fetch('/api/orders', { headers: { 'Authorization': 'Bearer ' + token } });
+                    this.orders = await res.json();
+                },
+                saveProfile() { alert('Профиль обновлен (заглушка)'); },
+                logout() { localStorage.clear(); window.location.href = 'index.html'; }
+            }
+        }
+    </script>
+</body>
+</html>

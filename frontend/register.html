@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ru" x-data="reg()">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация - FanCanvas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #e0f2f1; }
+        .pattern-bg { background-image: radial-gradient(#b2dfdb 1px, transparent 1px); background-size: 20px 20px; }
+        .reg-card { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); }
+        .input-teal { border: 2px solid #00BFA5; border-radius: 9999px; }
+        .input-teal:focus { outline: none; box-shadow: 0 0 0 4px rgba(0,191,165,0.15); }
+        .btn-primary { background: linear-gradient(135deg, #00BFA5 0%, #008E76 100%); border-radius: 9999px; }
+        .tab-btn { border-radius: 9999px; transition: all 0.3s; }
+        .tab-btn.active { background: linear-gradient(135deg, #00BFA5 0%, #008E76 100%); color: white; }
+        .tab-btn:not(.active) { background: #e0f2f1; color: #008E76; }
+    </style>
+</head>
+<body class="pattern-bg min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-md">
+        <div class="text-center mb-6">
+            <h1 class="text-3xl font-bold text-teal-600">FanCanvas</h1>
+        </div>
+        <div class="reg-card rounded-2xl shadow-2xl p-8">
+            <h2 class="text-2xl font-bold text-center text-teal-600 mb-6">Регистрация</h2>
+            <div class="flex justify-center gap-3 mb-6">
+                <button @click="role = 'buyer'" :class="{'active': role === 'buyer'}" class="tab-btn px-6 py-2 text-sm font-medium">Покупатель</button>
+                <button @click="role = 'artist'" :class="{'active': role === 'artist'}" class="tab-btn px-6 py-2 text-sm font-medium">Художник</button>
+            </div>
+            <form @submit.prevent="submit()" class="space-y-4">
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1 ml-3">Имя:</label>
+                    <input x-model="form.name" type="text" required placeholder="введите имя" class="input-teal w-full px-5 py-2.5 text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1 ml-3">Email:</label>
+                    <input x-model="form.email" type="email" required placeholder="введите Email" class="input-teal w-full px-5 py-2.5 text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1 ml-3">Номер телефона:</label>
+                    <input x-model="form.phone" type="tel" placeholder="введите номер телефона" class="input-teal w-full px-5 py-2.5 text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1 ml-3">Пароль:</label>
+                    <input x-model="form.password" type="password" required placeholder="введите пароль" class="input-teal w-full px-5 py-2.5 text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1 ml-3">Подтверждение пароля:</label>
+                    <input x-model="form.password2" type="password" required placeholder="подтвердите пароль" class="input-teal w-full px-5 py-2.5 text-sm">
+                </div>
+                <div x-show="role === 'artist'" x-transition class="space-y-4 pt-2 border-t border-teal-100">
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1 ml-3">Название магазина:</label>
+                        <input x-model="form.shop_name" type="text" placeholder="Название вашего магазина" class="input-teal w-full px-5 py-2.5 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1 ml-3">О себе / Био:</label>
+                        <textarea x-model="form.bio" placeholder="Расскажите о себе" class="input-teal w-full px-5 py-2.5 text-sm rounded-2xl" rows="3"></textarea>
+                    </div>
+                </div>
+                <div x-show="role === 'buyer'" x-transition class="space-y-4 pt-2 border-t border-teal-100">
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1 ml-3">Дата рождения:</label>
+                        <input x-model="form.birth_date" type="date" class="input-teal w-full px-5 py-2.5 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1 ml-3">Пол:</label>
+                        <select x-model="form.gender" class="input-teal w-full px-5 py-2.5 text-sm bg-white">
+                            <option value="">Не указан</option>
+                            <option value="male">Мужской</option>
+                            <option value="female">Женский</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary w-full py-3 text-white font-medium text-lg shadow-lg hover:shadow-xl transition transform hover:scale-[1.02] mt-4">
+                    Создать аккаунт
+                </button>
+            </form>
+        </div>
+    </div>
+    <script>
+        function reg() {
+            return {
+                role: 'buyer',
+                form: { name: '', email: '', phone: '', password: '', password2: '', shop_name: '', bio: '', birth_date: '', gender: '' },
+                async submit() {
+                    if (this.form.password !== this.form.password2) { alert('Пароли не совпадают'); return; }
+                    const payload = {
+                        email: this.form.email, password: this.form.password, name: this.form.name,
+                        phone: this.form.phone, role: this.role
+                    };
+                    if (this.role === 'artist') { payload.shop_name = this.form.shop_name; payload.bio = this.form.bio; }
+                    else { payload.birth_date = this.form.birth_date; payload.gender = this.form.gender; }
+                    const res = await fetch('/api/auth/register', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        localStorage.setItem('token', data.access_token);
+                        localStorage.setItem('role', data.role);
+                        window.location.href = this.role === 'artist' ? 'artist-dashboard.html' : 'index.html';
+                    } else {
+                        const err = await res.json();
+                        alert(err.detail || 'Ошибка регистрации');
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>

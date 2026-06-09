@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ru" x-data="checkoutApp()" x-init="init()">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Оформление заказа - FanCanvas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; }
+        .pattern-bg { background-image: radial-gradient(#e0e0e0 1px, transparent 1px); background-size: 20px 20px; }
+        .price-text { color: #E53935; }
+        .card-shadow { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .input-teal { border: 2px solid #00BFA5; border-radius: 9999px; }
+    </style>
+</head>
+<body class="pattern-bg min-h-screen">
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <a href="index.html" class="text-2xl font-bold text-teal-600">FanCanvas</a>
+        </div>
+    </header>
+    <main class="max-w-6xl mx-auto px-4 py-8">
+        <h1 class="text-2xl font-bold mb-6">Оформление заказа</h1>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 space-y-6">
+                <div class="bg-white rounded-xl p-6 card-shadow">
+                    <h2 class="font-bold text-lg mb-4">Получатель</h2>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="block text-sm text-gray-600 mb-1 ml-3">Имя</label><input x-model="form.name" type="text" class="input-teal w-full px-4 py-2 text-sm"></div>
+                        <div><label class="block text-sm text-gray-600 mb-1 ml-3">Отчество</label><input x-model="form.patronymic" type="text" class="input-teal w-full px-4 py-2 text-sm"></div>
+                        <div class="col-span-2"><label class="block text-sm text-gray-600 mb-1 ml-3">Фамилия</label><input x-model="form.surname" type="text" class="input-teal w-full px-4 py-2 text-sm"></div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl p-6 card-shadow">
+                    <h2 class="font-bold text-lg mb-4">Доставка</h2>
+                    <div class="space-y-4">
+                        <template x-for="group in groupedItems" :key="group.artist_id">
+                            <div class="border rounded-lg p-4">
+                                <div class="flex items-center gap-3 mb-3">
+                                    <img :src="group.items[0].product.images[0]?.image_url" class="w-12 h-12 rounded object-cover">
+                                    <div>
+                                        <div class="font-medium" x-text="group.items[0].product.title"></div>
+                                        <div class="text-xs text-gray-500">Товар: <span x-text="group.items[0].quantity"></span></div>
+                                    </div>
+                                    <div class="ml-auto price-text font-bold" x-text="group.items[0].product.price * group.items[0].quantity + '₽'"></div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="text-xs text-gray-500">Способ доставки</label>
+                                        <select class="w-full border rounded-lg px-3 py-2 text-sm mt-1"><option>Почта России</option><option>СДЭК</option><option>Boxberry</option></select>
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-gray-500">Адрес доставки</label>
+                                        <input x-model="form.address" type="text" placeholder="Город, улица, дом" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
+                                    </div>
+                                </div>
+                                <div class="mt-2 text-xs text-gray-500">Стоимость доставки: <span class="price-text">200₽</span> (заглушка)</div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-xl p-6 card-shadow sticky top-24">
+                    <button @click="submitOrder()" class="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 rounded-full shadow-lg transition mb-4">
+                        Оформить заказ
+                    </button>
+                    <div class="space-y-3 text-sm">
+                        <div class="flex justify-between"><span>Товары (<span x-text="totalCount"></span>):</span><span x-text="totalPrice + '₽'"></span></div>
+                        <div class="flex justify-between"><span>Доставка:</span><span x-text="shippingCost + '₽'"></span></div>
+                        <div class="border-t pt-3 flex justify-between text-lg font-bold"><span>Итог:</span><span class="price-text" x-text="(totalPrice + shippingCost) + '₽'"></span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script>
+        function checkoutApp() {
+            return {
+                items: [], form: { name: '', patronymic: '', surname: '', address: '', phone: '' }, shippingCost: 200,
+                get totalPrice() { return this.items.reduce((sum, i) => sum + i.product.price * i.quantity, 0); },
+                get totalCount() { return this.items.reduce((sum, i) => sum + i.quantity, 0); },
+                get groupedItems() {
+                    const groups = {};
+                    this.items.forEach(item => {
+                        const aid = item.product.artist_id;
+                        if (!groups[aid]) groups[aid] = { artist_id: aid, items: [] };
+                        groups[aid].items.push(item);
+                    });
+                    return Object.values(groups);
+                },
+                async init() {
+                    const token = localStorage.getItem('token');
+                    if (!token) return window.location.href = 'login.html';
+                    const res = await fetch('/api/cart', { headers: { 'Authorization': 'Bearer ' + token } });
+                    this.items = await res.json();
+                    if (this.items.length === 0) window.location.href = 'index.html';
+                    const uRes = await fetch('/api/auth/me', { headers: { 'Authorization': 'Bearer ' + token } });
+                    if (uRes.ok) { const user = await uRes.json(); this.form.name = user.name; }
+                },
+                async submitOrder() {
+                    const token = localStorage.getItem('token');
+                    const items = this.items.map(i => ({ product_id: i.product.id, quantity: i.quantity }));
+                    const res = await fetch('/api/orders', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                        body: JSON.stringify({
+                            items: items,
+                            delivery_name: this.form.name + ' ' + this.form.surname,
+                            delivery_address: this.form.address || 'Адрес не указан',
+                            delivery_phone: this.form.phone || 'Телефон не указан'
+                        })
+                    });
+                    if (res.ok) { alert('Заказ успешно оформлен!'); window.location.href = 'profile.html'; }
+                    else { alert('Ошибка при оформлении заказа'); }
+                }
+            }
+        }
+    </script>
+</body>
+</html>

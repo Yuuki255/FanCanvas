@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ru" x-data="productApp()" x-init="init()">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Товар - FanCanvas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; }
+        .pattern-bg { background-image: radial-gradient(#e0e0e0 1px, transparent 1px); background-size: 20px 20px; }
+        .price-text { color: #E53935; }
+        .card-shadow { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    </style>
+</head>
+<body class="pattern-bg min-h-screen">
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <a href="index.html" class="text-2xl font-bold text-teal-600">FanCanvas</a>
+            <div class="flex items-center gap-4">
+                <a href="cart.html" class="text-gray-600 hover:text-teal-600"><i class="fas fa-shopping-cart text-xl"></i></a>
+                <a href="profile.html" class="text-gray-600 hover:text-teal-600"><i class="fas fa-user text-xl"></i></a>
+            </div>
+        </div>
+    </header>
+    <main class="max-w-7xl mx-auto px-4 py-8" x-show="product.id">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="space-y-4">
+                <div class="bg-white rounded-xl overflow-hidden card-shadow aspect-square">
+                    <img :src="selectedImage || product.images[0]?.image_url" class="w-full h-full object-cover">
+                </div>
+                <div class="flex gap-3 overflow-x-auto pb-2">
+                    <template x-for="img in product.images" :key="img.image_url">
+                        <button @click="selectedImage = img.image_url" class="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition" :class="selectedImage === img.image_url ? 'border-teal-500' : 'border-transparent hover:border-teal-300'">
+                            <img :src="img.image_url" class="w-full h-full object-cover">
+                        </button>
+                    </template>
+                </div>
+            </div>
+            <div class="space-y-6">
+                <div>
+                    <div class="flex items-start justify-between">
+                        <h1 class="text-2xl font-bold text-gray-900" x-text="product.title"></h1>
+                        <button @click="toggleFavorite()" class="text-gray-400 hover:text-red-500 transition text-2xl">
+                            <i :class="isFavorite ? 'fas fa-heart text-red-500' : 'far fa-heart'"></i>
+                        </button>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-1" x-text="(product.category?.name || 'Без категории') + ' • ' + (product.fandom?.name || 'Оригинал')"></p>
+                </div>
+                <div class="price-text text-3xl font-bold" x-text="product.price + '₽'"></div>
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center border-2 border-teal-500 rounded-full">
+                        <button @click="qty > 1 && qty--" class="px-3 py-1 text-teal-600 hover:bg-teal-50 rounded-l-full">-</button>
+                        <span x-text="qty" class="px-3 py-1 font-medium w-10 text-center"></span>
+                        <button @click="qty < product.stock && qty++" class="px-3 py-1 text-teal-600 hover:bg-teal-50 rounded-r-full">+</button>
+                    </div>
+                    <span class="text-sm text-gray-500" x-text="'В наличии: ' + product.stock + ' шт.'"></span>
+                </div>
+                <div class="space-y-2">
+                    <template x-for="attr in product.attributes" :key="attr.attr_name">
+                        <div class="flex items-center gap-2 text-sm"><span class="text-gray-500" x-text="attr.attr_name + ':'"></span><span class="font-medium" x-text="attr.attr_value"></span></div>
+                    </template>
+                </div>
+                <button @click="addToCart()" class="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 rounded-full shadow-lg hover:shadow-xl transition transform hover:scale-[1.02]">
+                    <i class="fas fa-shopping-cart mr-2"></i> В корзину
+                </button>
+                <div class="bg-white rounded-xl p-4 card-shadow">
+                    <div class="flex items-center gap-3">
+                        <img :src="product.artist?.avatar_url || 'https://via.placeholder.com/50'" class="w-12 h-12 rounded-full object-cover">
+                        <div>
+                            <a :href="'artist-shop.html?id=' + product.artist_id" class="font-bold text-teal-700 hover:underline" x-text="product.artist?.artist_profile?.shop_name || product.artist?.name"></a>
+                            <div class="flex items-center gap-1 text-sm text-yellow-500"><i class="fas fa-star"></i><span x-text="(product.artist?.artist_profile?.rating || 5).toFixed(1)"></span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl p-4 card-shadow">
+                    <h3 class="font-bold mb-2">О товаре:</h3>
+                    <p class="text-gray-600 text-sm leading-relaxed" x-text="product.description || 'Описание отсутствует'"></p>
+                </div>
+            </div>
+        </div>
+        <div class="mt-12" x-show="artistProducts.length > 0">
+            <h2 class="text-xl font-bold mb-4">Другие товары художника:</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <template x-for="p in artistProducts" :key="p.id">
+                    <a :href="'product.html?id=' + p.id" class="bg-white rounded-xl overflow-hidden card-shadow hover:shadow-lg transition">
+                        <div class="aspect-square bg-gray-100"><img :src="p.images[0]?.image_url" class="w-full h-full object-cover"></div>
+                        <div class="p-3"><div class="price-text font-bold" x-text="p.price + '₽'"></div><div class="text-sm truncate" x-text="p.title"></div></div>
+                    </a>
+                </template>
+            </div>
+        </div>
+    </main>
+    <script>
+        function productApp() {
+            return {
+                product: {images:[], attributes:[], artist:{}},
+                selectedImage: null, qty: 1, isFavorite: false, artistProducts: [],
+                async init() {
+                    const params = new URLSearchParams(window.location.search);
+                    const id = params.get('id');
+                    if (!id) return window.location.href = 'index.html';
+                    const res = await fetch('/api/products/' + id);
+                    this.product = await res.json();
+                    this.selectedImage = this.product.images[0]?.image_url;
+                    const aRes = await fetch('/api/artists/' + this.product.artist_id + '/products');
+                    this.artistProducts = (await aRes.json()).filter(p => p.id != id).slice(0, 4);
+                },
+                async addToCart() {
+                    const token = localStorage.getItem('token');
+                    if (!token) return window.location.href = 'login.html';
+                    await fetch('/api/cart', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                        body: JSON.stringify({ product_id: this.product.id, quantity: this.qty })
+                    });
+                    alert('Добавлено в корзину!');
+                },
+                async toggleFavorite() {
+                    const token = localStorage.getItem('token');
+                    if (!token) return window.location.href = 'login.html';
+                    const res = await fetch('/api/favorites/' + this.product.id, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } });
+                    const data = await res.json();
+                    this.isFavorite = data.status === 'added';
+                }
+            }
+        }
+    </script>
+</body>
+</html>
