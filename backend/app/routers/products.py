@@ -22,6 +22,7 @@ from app.database import get_db
 from app.models import (
     Product,
     ProductAttribute,
+    ProductImage,
     ArtistProfile,
     User
 )
@@ -95,6 +96,14 @@ async def create_product(
                 attr_value=attr.attr_value
             )
         )
+
+    for image_url in payload.images:
+    db.add(
+        ProductImage(
+            product_id=product.id,
+            image_url=image_url
+        )
+    )
 
     await db.commit()
 

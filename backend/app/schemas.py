@@ -175,21 +175,19 @@ class ProductAttributeResponse(ProductAttributeCreate):
 
 class ProductCreate(BaseModel):
     category_id: Optional[int] = None
-
     fandom_id: Optional[int] = None
 
     title: str
-
     description: Optional[str] = None
 
     price: float
-
     stock: int
 
     shipping_days: int = 3
 
     attributes: list[ProductAttributeCreate] = []
 
+    images: list[str] = []
 
 # ==================================
 # PRODUCT UPDATE

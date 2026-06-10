@@ -248,24 +248,60 @@
                 },
                 handleFiles(e) { this.files = Array.from(e.target.files); this.previews = this.files.map(f => URL.createObjectURL(f)); },
                 async saveProduct() {
-                    const token = localStorage.getItem('token');
-                    const form = new FormData();
-                    Object.keys(this.productForm).forEach(k => {
-                        if (k === 'attributes') { this.productForm[k].forEach(a => { if(a.attr_name) { form.append('attr_keys', a.attr_name); form.append('attr_values', a.attr_value); } }); }
-                        else { form.append(k, this.productForm[k]); }
-                    });
-                    this.files.forEach(f => form.append('files', f));
-                    const url = this.editingId ? '/api/products/' + this.editingId : '/api/products';
-                    const method = this.editingId ? 'PUT' : 'POST';
-                    const res = await fetch(url, { method: method, headers: { 'Authorization': 'Bearer ' + token }, body: form });
-                    if (res.ok) {
-                        alert(this.editingId ? 'Товар обновлен' : 'Товар создан');
-                        this.tab = 'products'; this.editingId = null;
-                        this.productForm = { title: '', description: '', price: '', stock: '', shipping_days: 3, category_id: '', fandom_id: '', attributes: [] };
-                        this.previews = []; this.files = [];
-                        await this.loadProducts();
-                    } else { alert('Ошибка сохранения'); }
-                },
+
+    const token = localStorage.getItem('token');
+
+    const url = this.editingId
+        ? '/api/products/' + this.editingId
+        : '/api/products';
+
+    const method = this.editingId
+        ? 'PUT'
+        : 'POST';
+
+    const res = await fetch(url, {
+        method,
+        headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(this.productForm)
+    });
+
+    if (res.ok) {
+
+        alert(
+            this.editingId
+                ? 'Товар обновлен'
+                : 'Товар создан'
+        );
+
+        this.tab = 'products';
+
+        this.editingId = null;
+
+        this.productForm = {
+            title: '',
+            description: '',
+            price: '',
+            stock: '',
+            shipping_days: 3,
+            category_id: '',
+            fandom_id: '',
+            attributes: []
+        };
+
+        await this.loadProducts();
+
+    } else {
+
+        const err = await res.text();
+
+        console.log(err);
+
+        alert('Ошибка сохранения');
+    }
+},
                 editProduct(p) {
                     this.productForm = { title: p.title, description: p.description || '', price: p.price, stock: p.stock, shipping_days: p.shipping_days, category_id: p.category_id, fandom_id: p.fandom_id || '', attributes: p.attributes || [] };
                     this.editingId = p.id; this.tab = 'add';
