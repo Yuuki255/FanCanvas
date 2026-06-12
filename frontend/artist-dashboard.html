@@ -183,7 +183,17 @@
             return {
                 tab: 'products', user: null, profile: null, products: [], orders: [], categories: [], fandoms: [], stats: {},
                 editingId: null, previews: [], files: [],
-                productForm: { title: '', description: '', price: '', stock: '', shipping_days: 3, category_id: '', fandom_id: '', attributes: [] },
+                productForm: {
+    title: '',
+    description: '',
+    price: '',
+    stock: '',
+    shipping_days: 3,
+    category_id: '',
+    fandom_id: '',
+    attributes: [],
+    images: []
+},
                 async init() {
                     const token = localStorage.getItem('token');
                     if (!token) return window.location.href = 'login.html';
@@ -251,19 +261,48 @@
 
     const token = localStorage.getItem('token');
 
+    // Загружаем изображения
+    let imageUrls = [];
+
+    for (const file of this.files) {
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const upload = await fetch("/api/upload", {
+            method: "POST",
+            headers: {
+                Authorization: "Bearer " + token
+            },
+            body: formData
+        });
+
+        if (!upload.ok) {
+            alert("Ошибка загрузки изображения");
+            return;
+        }
+
+        const img = await upload.json();
+
+        imageUrls.push(img.url);
+    }
+
+    // Добавляем массив изображений
+    this.productForm.images = imageUrls;
+
     const url = this.editingId
-        ? '/api/products/' + this.editingId
-        : '/api/products';
+        ? "/api/products/" + this.editingId
+        : "/api/products";
 
     const method = this.editingId
-        ? 'PUT'
-        : 'POST';
+        ? "PUT"
+        : "POST";
 
     const res = await fetch(url, {
         method,
         headers: {
-            'Authorization': 'Bearer ' + token,
-            'Content-Type': 'application/json'
+            Authorization: "Bearer " + token,
+            "Content-Type": "application/json"
         },
         body: JSON.stringify(this.productForm)
     });
@@ -272,34 +311,33 @@
 
         alert(
             this.editingId
-                ? 'Товар обновлен'
-                : 'Товар создан'
+                ? "Товар обновлен"
+                : "Товар создан"
         );
 
-        this.tab = 'products';
-
-        this.editingId = null;
-
         this.productForm = {
-            title: '',
-            description: '',
-            price: '',
-            stock: '',
+            title: "",
+            description: "",
+            price: "",
+            stock: "",
             shipping_days: 3,
-            category_id: '',
-            fandom_id: '',
-            attributes: []
+            category_id: "",
+            fandom_id: "",
+            attributes: [],
+            images: []
         };
+
+        this.files = [];
+        this.previews = [];
+        this.editingId = null;
+        this.tab = "products";
 
         await this.loadProducts();
 
     } else {
 
-        const err = await res.text();
-
-        console.log(err);
-
-        alert('Ошибка сохранения');
+        console.log(await res.text());
+        alert("Ошибка сохранения");
     }
 },
                 editProduct(p) {

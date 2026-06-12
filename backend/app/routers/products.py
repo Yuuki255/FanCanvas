@@ -98,12 +98,12 @@ async def create_product(
         )
 
     for image_url in payload.images:
-    db.add(
-        ProductImage(
-            product_id=product.id,
-            image_url=image_url
+        db.add(
+                ProductImage(
+                product_id=product.id,
+                image_url=image_url
+                )
         )
-    )
 
     await db.commit()
 

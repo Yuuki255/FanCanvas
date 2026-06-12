@@ -128,7 +128,9 @@
             <template x-for="product in products" :key="product.id">
                 <div class="bg-white rounded-xl overflow-hidden card-shadow hover:shadow-xl transition group">
                     <div class="relative aspect-square bg-gray-100 overflow-hidden">
-                        <img :src="product.images[0]?.image_url || 'https://via.placeholder.com/400?text=No+Image'" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                        <img
+                        :src="product.images.length ? product.images[0].image_url : 'https://via.placeholder.com/400?text=No+Image'"
+                        class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
                         <button @click="toggleFavorite(product.id)" class="absolute top-3 right-3 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow hover:bg-teal-500 hover:text-white transition">
                             <i class="far fa-heart"></i>
                         </button>
@@ -202,7 +204,8 @@
                     if (this.filters.sort) params.append('sort', this.filters.sort);
                     if (this.searchQuery) params.append('search', this.searchQuery);
                     const res = await fetch('/api/products?' + params.toString());
-                    this.products = await res.json();
+                    const data = await res.json();
+                    this.products = data.items;
                 },
                 async loadCartCount() {
                     const token = localStorage.getItem('token');

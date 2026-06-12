@@ -168,7 +168,8 @@ async def my_products(
             selectinload(Product.images),
             selectinload(Product.attributes),
             selectinload(Product.category),
-            selectinload(Product.fandom)
+            selectinload(Product.fandom),
+            selectinload(Product.artist),
         )
         .where(
             Product.artist_id ==
@@ -196,7 +197,8 @@ async def artist_products(
             selectinload(Product.images),
             selectinload(Product.attributes),
             selectinload(Product.category),
-            selectinload(Product.fandom)
+            selectinload(Product.fandom),
+            selectinload(Product.artist),
         )
         .where(
             Product.artist_id ==
