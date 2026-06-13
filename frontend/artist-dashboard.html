@@ -182,7 +182,7 @@
         function artistApp() {
             return {
                 tab: 'products', user: null, profile: null, products: [], orders: [], categories: [], fandoms: [], stats: {},
-                editingId: null, previews: [], files: [],
+                editingId: null, previews: [], uploadedImages: [], uploading: false,
                 productForm: {
     title: '',
     description: '',
@@ -256,56 +256,68 @@
                         products_views: 0
                     };
                 },
-                handleFiles(e) { this.files = Array.from(e.target.files); this.previews = this.files.map(f => URL.createObjectURL(f)); },
+                async handleFiles(e) {
+
+                    this.uploading = true;
+
+                    const token = localStorage.getItem("token");
+
+                    const files = Array.from(e.target.files);
+
+                    for (const file of files) {
+
+                        // показываем превью
+                        this.previews.push(URL.createObjectURL(file));
+
+                        // загружаем файл
+                        const formData = new FormData();
+
+                        formData.append("file", file);
+
+                        const upload = await fetch("/api/upload", {
+                            method: "POST",
+                            headers: {
+                                Authorization: "Bearer " + token
+                            },
+                            body: formData
+                        });
+
+                        if (!upload.ok) {
+                            alert("Ошибка загрузки изображения");
+                            continue;
+                        }
+
+                        const img = await upload.json();
+
+                        this.uploadedImages.push(img.url);
+
+                    }
+
+                    this.uploading = false;
+                },
                 async saveProduct() {
 
-    const token = localStorage.getItem('token');
+                    const token = localStorage.getItem('token');
 
-    // Загружаем изображения
-    let imageUrls = [];
+                    this.productForm.images = this.uploadedImages;
 
-    for (const file of this.files) {
 
-        const formData = new FormData();
-        formData.append("file", file);
+                    const url = this.editingId
+                        ? "/api/products/" + this.editingId
+                        : "/api/products";
 
-        const upload = await fetch("/api/upload", {
-            method: "POST",
-            headers: {
-                Authorization: "Bearer " + token
-            },
-            body: formData
-        });
+                    const method = this.editingId
+                        ? "PUT"
+                        : "POST";
 
-        if (!upload.ok) {
-            alert("Ошибка загрузки изображения");
-            return;
-        }
-
-        const img = await upload.json();
-
-        imageUrls.push(img.url);
-    }
-
-    // Добавляем массив изображений
-    this.productForm.images = imageUrls;
-
-    const url = this.editingId
-        ? "/api/products/" + this.editingId
-        : "/api/products";
-
-    const method = this.editingId
-        ? "PUT"
-        : "POST";
-
-    const res = await fetch(url, {
-        method,
-        headers: {
-            Authorization: "Bearer " + token,
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(this.productForm)
-    });
+                    const res = await fetch(url, {
+                        method,
+                        headers: {
+                            Authorization: "Bearer " + token,
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(this.productForm)
+                    });
 
     if (res.ok) {
 
@@ -329,6 +341,7 @@
 
         this.files = [];
         this.previews = [];
+        this.uploadedImages = [];
         this.editingId = null;
         this.tab = "products";
 

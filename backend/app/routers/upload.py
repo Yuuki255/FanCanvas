@@ -11,7 +11,7 @@ router = APIRouter(
     tags=["Upload"]
 )
 
-UPLOAD_DIR = Path("static/uploads")
+UPLOAD_DIR = Path("/app/static/uploads")
 UPLOAD_DIR.mkdir(
     parents=True,
     exist_ok=True
