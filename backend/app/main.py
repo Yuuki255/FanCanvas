@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 from app.init_db import create_tables
 
@@ -28,6 +29,9 @@ app = FastAPI(
     title="FanCanvas API",
     lifespan=lifespan
 )
+
+
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
 
 app.mount(
     "/static",
