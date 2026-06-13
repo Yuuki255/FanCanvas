@@ -125,7 +125,7 @@
 
     <main class="max-w-7xl mx-auto px-4 pb-12">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <template x-for="product in products" :key="product.id">
+            <template x-for="(product, index) in products" :key="index">
                 <div class="bg-white rounded-xl overflow-hidden card-shadow hover:shadow-xl transition group">
                     <div class="relative aspect-square bg-gray-100 overflow-hidden">
                         <img
