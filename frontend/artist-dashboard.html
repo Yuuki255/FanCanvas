@@ -184,16 +184,16 @@
                 tab: 'products', user: null, profile: null, products: [], orders: [], categories: [], fandoms: [], stats: {},
                 editingId: null, previews: [], uploadedImages: [], uploading: false,
                 productForm: {
-    title: '',
-    description: '',
-    price: '',
-    stock: '',
-    shipping_days: 3,
-    category_id: '',
-    fandom_id: '',
-    attributes: [],
-    images: []
-},
+                    title: '',
+                    description: '',
+                    price: '',
+                    stock: '',
+                    shipping_days: 3,
+                    category_id: '',
+                    fandom_id: '',
+                    attributes: [],
+                    images: []
+                },
                 async init() {
                     const token = localStorage.getItem('token');
                     if (!token) return window.location.href = 'login.html';
@@ -358,9 +358,26 @@
                     this.editingId = p.id; this.tab = 'add';
                 },
                 async deleteProduct(id) {
-                    if (!confirm('Удалить товар?')) return;
-                    const token = localStorage.getItem('token');
-                    await fetch('/api/products/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
+
+                    if (!confirm("Удалить товар?")) return;
+
+                    const token = localStorage.getItem("token");
+
+                    const res = await fetch("/api/products/" + id, {
+                        method: "DELETE",
+                        headers: {
+                            Authorization: "Bearer " + token
+                        }
+                    });
+
+                    if (!res.ok) {
+                        console.log(await res.text());
+                        alert("Ошибка удаления");
+                        return;
+                    }
+
+                    alert("Товар удалён");
+
                     await this.loadProducts();
                 },
                 async shipItem(item) {

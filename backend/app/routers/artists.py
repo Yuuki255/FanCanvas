@@ -90,13 +90,9 @@ async def dashboard(
         )
 
     products_count = await db.scalar(
-        select(
-            func.count(Product.id)
-        )
-        .where(
-            Product.artist_id ==
-            artist.id
-        )
+        select(func.count(Product.id))
+        .where(Product.artist_id == artist.id)
+        .where(Product.status == "active")
     )
 
     orders_count = await db.scalar(
@@ -171,13 +167,9 @@ async def my_products(
             selectinload(Product.fandom),
             selectinload(Product.artist),
         )
-        .where(
-            Product.artist_id ==
-            artist.id
-        )
-        .order_by(
-            Product.created_at.desc()
-        )
+        .where(Product.artist_id == artist.id)
+        .where(Product.status == "active")
+        .order_by(Product.created_at.desc())
     )
 
     return result.scalars().unique().all()
@@ -200,10 +192,8 @@ async def artist_products(
             selectinload(Product.fandom),
             selectinload(Product.artist),
         )
-        .where(
-            Product.artist_id ==
-            artist_id
-        )
+        .where(Product.artist_id == artist_id)
+        .where(Product.status == "active")
     )
 
     return result.scalars().unique().all()

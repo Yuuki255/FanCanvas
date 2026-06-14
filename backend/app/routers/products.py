@@ -99,13 +99,14 @@ async def create_product(
 
     for image_url in payload.images:
         db.add(
-                ProductImage(
+            ProductImage(
                 product_id=product.id,
                 image_url=image_url
-                )
+            )
         )
 
     await db.commit()
+    await db.refresh(product)
 
     result = await db.execute(
         select(Product)
@@ -116,11 +117,13 @@ async def create_product(
             selectinload(Product.fandom),
             selectinload(Product.artist)
         )
-        .where(Product.id == product.id)
+        .where(
+            Product.id == product.id,
+            Product.status == "active"
+        )
     )
-
     return result.scalar_one()
-
+    
 
 # =====================================
 # PRODUCT LIST
@@ -157,10 +160,12 @@ async def get_products(
             selectinload(Product.fandom),
             selectinload(Product.artist)
         )
+        .where(Product.status == "active")
     )
 
-    count_stmt = select(
-        func.count(Product.id)
+    count_stmt = (
+        select(func.count(Product.id))
+        .where(Product.status == "active")
     )
 
     if category_id:
@@ -329,7 +334,8 @@ async def update_product(
     product = await db.scalar(
         select(Product)
         .where(
-            Product.id == product_id
+            Product.id == product_id,
+            Product.status == "active"
         )
     )
 
@@ -357,6 +363,7 @@ async def update_product(
         )
 
     await db.commit()
+    await db.refresh(product)
 
     result = await db.execute(
         select(Product)
@@ -368,7 +375,8 @@ async def update_product(
             selectinload(Product.artist)
         )
         .where(
-            Product.id == product_id
+            Product.id == product_id,
+            Product.status == "active"
         )
     )
 
@@ -400,7 +408,8 @@ async def delete_product(
     product = await db.scalar(
         select(Product)
         .where(
-            Product.id == product_id
+            Product.id == product_id,
+            Product.status == "active"
         )
     )
 
@@ -416,9 +425,10 @@ async def delete_product(
             "Access denied"
         )
 
-    await db.delete(product)
+    product.status = "deleted"
 
     await db.commit()
+    await db.refresh(product)
 
     return {
         "message": "Product deleted"
